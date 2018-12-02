@@ -7,10 +7,8 @@ from matplotlib import pyplot as plt
 import seaborn as sn
 from sklearn import model_selection
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
 from sklearn.svm import SVC
-
-
 
 def show_incorrect_images(model, x_test, y_test):
     """imshow before and after images for images where model predicted
@@ -67,6 +65,10 @@ def plot_confusion_matrix(y_test,y_pred):
     sn.set(font_scale=1.4)#for label size
     sn.heatmap(df_cm, annot=True,annot_kws={"size": 16})
 
+#def plot_roc_multiclass():
+
+#def plot_roc_binary():
+
 def do_CV(X,y, model, multi_class=True):
     # Change to 2-class
     if not multi_class:
@@ -98,7 +100,15 @@ def do_CV(X,y, model, multi_class=True):
     print("The model is trained on the full development set.")
     print("The scores are computed on the full evaluation set.")
     print()
-    y_true, y_pred = y_test, model.predict(X_test)
-    print(classification_report(y_true, y_pred))
-    plot_confusion_matrix(y_true, y_pred)
+    y_pred = model.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    plot_confusion_matrix(y_test, y_pred)
+    if multi_class == False:
+        my_dict = {'I':1, 'R':-1}
+        print("ROC AUC score")
+        print(roc_auc_score(np.vectorize(my_dict.get)(y_test), np.vectorize(my_dict.get)(y_pred)))
     print()
+
+    print("This is the classification report for the training set:")
+    y_train_pred = model.predict(X_train)
+    print(classification_report(y_train, y_train_pred))
