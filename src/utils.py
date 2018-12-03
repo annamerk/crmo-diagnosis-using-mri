@@ -69,13 +69,13 @@ def plot_confusion_matrix(y_test,y_pred):
 
 #def plot_roc_binary():
 
-def do_CV(X,y, model, multi_class=True):
+def do_CV(X,y, model, multi_class=True, test_size=0.3):
     # Change to 2-class
     if not multi_class:
         y = y.replace('S', 'R')
     # Split the dataset in two equal parts
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=0)
+        X, y, test_size=test_size, random_state=0, stratify=y)
 
     print("# Tuning hyper-parameter")
     print()
