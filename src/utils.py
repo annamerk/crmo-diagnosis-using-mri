@@ -88,7 +88,8 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
 
     print("Best parameters set found on development set:")
     print()
-    print(model.best_params_)
+    if hasattr(model, "best_params_"):
+        print(model.best_params_)
     print()
     print("Grid scores on development set:")
     print()
