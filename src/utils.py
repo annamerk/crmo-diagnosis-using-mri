@@ -102,7 +102,6 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     print("The scores are computed on the full evaluation set.")
     print()
     y_pred = model.predict(X_test)
-    print(classification_report(y_test, y_pred))
     plot_confusion_matrix(y_test, y_pred)
     if multi_class == False:
         my_dict = {'I':1, 'R':-1}
@@ -112,6 +111,8 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     else:
         plot_roc_multi(y_test, model.predict_proba(X_test))
     print()
+    print("This is the classification report for the eval set:")
+    print(classification_report(y_test, y_pred))
 
     print("This is the classification report for the training set:")
     y_train_pred = model.predict(X_train)
