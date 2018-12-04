@@ -1,13 +1,15 @@
 import cv2
 import numpy as np
 
-import matplotlib
-matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 import seaborn as sn
+import pandas as pd
 from sklearn import model_selection
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, roc_curve, auc, classification_report, confusion_matrix
+from itertools import cycle
+from sklearn.preprocessing import label_binarize
+from scipy import interp
 from sklearn.svm import SVC
 
 def show_incorrect_images(model, x_test, y_test):
@@ -61,13 +63,12 @@ def generate_validation_curve(estimator, X, y, param_name, param_range, cv,
     plt.show()
 
 def plot_confusion_matrix(y_test,y_pred):
-    df_cm = confusion_matrix(y_test,y_pred)#,labels=["I", "S", "R"])
-    sn.set(font_scale=1.4)#for label size
+    class_names = np.unique(y_test)
+    df_cm = pd.DataFrame(
+        confusion_matrix(y_test,y_pred), index=class_names, columns=class_names, 
+    )
+    #sn.set(font_scale=1.4)#for label size
     sn.heatmap(df_cm, annot=True,annot_kws={"size": 16})
-
-#def plot_roc_multiclass():
-
-#def plot_roc_binary():
 
 def do_CV(X,y, model, multi_class=True, test_size=0.3):
     # Change to 2-class
@@ -107,8 +108,89 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
         my_dict = {'I':1, 'R':-1}
         print("ROC AUC score")
         print(roc_auc_score(np.vectorize(my_dict.get)(y_test), np.vectorize(my_dict.get)(y_pred)))
+        plot_roc_binary(y_test, model.predict_proba(X_test))
+    else:
+        plot_roc_multi(y_test, model.predict_proba(X_test))
     print()
 
     print("This is the classification report for the training set:")
     y_train_pred = model.predict(X_train)
     print(classification_report(y_train, y_train_pred))
+
+def plot_roc_binary(y_true, y_score):
+    classes = np.unique(y_true)
+    y = label_binarize(y_true, classes=np.unique(y_true))
+    
+    fpr, tpr, _ = roc_curve(y[:,0], y_score[:,0])
+    roc_auc = auc(fpr, tpr)
+    
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange',
+             lw=lw, label='ROC curve class {0} (area = {1:0.2f})' ''.format(classes[0], roc_auc))
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="lower right")
+    plt.show()
+
+def plot_roc_multi(y_true, y_score):
+    classes = np.unique(y_true)
+    y = label_binarize(y_true, classes=np.unique(y_true))
+    n_classes = len(classes)
+
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Compute micro-average ROC curve and ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y.ravel(), y_score.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+        mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    fpr["macro"] = all_fpr
+    tpr["macro"] = mean_tpr
+    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+    # Plot all ROC curves
+    plt.figure()
+    plt.plot(fpr["micro"], tpr["micro"],
+             label='micro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc["micro"]),
+             color='deeppink', linestyle=':', linewidth=4)
+
+    plt.plot(fpr["macro"], tpr["macro"],
+             label='macro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc["macro"]),
+             color='navy', linestyle=':', linewidth=4)
+
+    lw = 2
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                 ''.format(classes[i], roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], '', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="lower right")
+    plt.show()
