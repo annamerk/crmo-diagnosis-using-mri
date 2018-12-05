@@ -12,6 +12,9 @@ from sklearn.preprocessing import label_binarize
 from scipy import interp
 from sklearn.svm import SVC
 
+TEST_KEYS = ['6/10-23-14/11-16-17','7/4-10-12/5-28-15','2/12-11-12/12-17-13',
+                     '24/3-11-14/8-14-14','24b/3-11-14/8-14-14','32/12-17-15/1-5-17',
+                     '41/1-25-11/8-7-12']
 def show_incorrect_images(model, x_test, y_test):
     """imshow before and after images for images where model predicted
     incorrectly. x_test should have before_path and after_path columns which
@@ -120,6 +123,7 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     print("This is the classification report for the training set:")
     y_train_pred = model.predict(X_train)
     print(classification_report(y_train, y_train_pred))
+    return model.best_estimator_
 
 def plot_roc_binary(y_true, y_score, classes):
     y = label_binarize(y_true, classes=classes)
