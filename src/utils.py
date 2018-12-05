@@ -108,7 +108,7 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     if multi_class == False:
         my_dict = {'I':1, 'SR':-1}
         print("ROC AUC score")
-        print(roc_auc_score(np.vectorize(my_dict.get)(y_test), np.vectorize(my_dict.get)(y_pred)))
+        print(roc_auc_score(np.vectorize(my_dict.get)(y_test), model.predict_proba(X_test)[:, 1]))
         plot_roc_binary(y_test, model.predict_proba(X_test))
     else:
         plot_roc_multi(y_test, model.predict_proba(X_test))
