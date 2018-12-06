@@ -11,8 +11,6 @@ from sklearn import datasets, neighbors, linear_model, model_selection, svm
 from sklearn.metrics import confusion_matrix 
 from sklearn.model_selection import train_test_split,KFold,learning_curve, LeavePOut
 
-import utils
-
 
 def binary_threshold(img):
     ret, threshold = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
@@ -31,6 +29,21 @@ def hist_features(img_path, img_post=None, show_image=False):
 
 def baseline_hist_diff(img_before, img_after, img_post=None):
     return hist_features(img_before, img_post=img_post) - hist_features(img_after, img_post=img_post)
+
+def augment(before_paths, after_paths, labels):
+    """flip pairs labeled I or R and change label."""
+    new_before_paths, new_after_paths, new_labels = [], [], []
+    for bp, ap, l in zip(before_paths, after_paths, labels):
+        new_before_paths.append(bp)
+        new_after_paths.append(ap)
+        new_labels.append(l)
+        if l == 'I' or l == 'R':
+            flipped_label = 'R' if l == 'I' else 'I'
+            new_before_paths.append(ap)
+            new_after_paths.append(bp)
+            new_labels.append(flipped_label)
+    return (new_before_paths, new_after_paths, new_labels)
+        
 
 if __name__ == '__main__':
     label_type = 'binary'
