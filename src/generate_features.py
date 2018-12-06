@@ -11,6 +11,9 @@ from sklearn import datasets, neighbors, linear_model, model_selection, svm
 from sklearn.metrics import confusion_matrix 
 from sklearn.model_selection import train_test_split,KFold,learning_curve, LeavePOut
 
+FILE_EXTENSION = "tif"
+DIR_NAME = "legs_folder/"
+TEST_PATIENT_IDS = ['2','32','24','24b','6','7', '41']
 
 def binary_threshold(img):
     ret, threshold = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
@@ -43,7 +46,23 @@ def augment(before_paths, after_paths, labels):
             new_after_paths.append(bp)
             new_labels.append(flipped_label)
     return (new_before_paths, new_after_paths, new_labels)
-        
+
+def test_paths_and_labels():
+    test_bp, test_ap, test_labels, patient_ids = [], [], [], []
+    for index, row in pd.read_csv('../data.csv').iterrows():
+        patient_id = str(row["patient_id"])
+        if patient_id not in TEST_PATIENT_IDS:
+            continue
+
+        file_1 = os.path.join('..', DIR_NAME, patient_id, '.'.join((row["scan_1"], FILE_EXTENSION)))
+        file_2 = os.path.join('..', DIR_NAME, patient_id, '.'.join((row["scan_2"], FILE_EXTENSION)))
+
+        if not (os.path.isfile(file_1) and os.path.isfile(file_2)):
+            continue
+        test_labels.append(row["y"])
+        test_bp.append(file_1[3:])
+        test_ap.append(file_2[3:])
+    return (test_bp, test_ap, test_labels)
 
 if __name__ == '__main__':
     label_type = 'binary'
@@ -56,10 +75,10 @@ if __name__ == '__main__':
     else:
         include_paths = False
 
+    # whether to augment data points (the training set only)
+    augment = len(sys.argv) > 3 and sys.argv[3] == 'augment'
 
     input_csv = pd.read_csv(input_csv_fname)
-    FILE_EXTENSION = "tif"
-    dir_name = "legs_folder/"
     img_hist = []
     patient_ids = []
     Y = []
@@ -67,8 +86,8 @@ if __name__ == '__main__':
 
     for index, row in input_csv.iterrows():
         patient_id = str(row["patient_id"])
-        file_1 = os.path.join(dir_name, patient_id, '.'.join((row["scan_1"], FILE_EXTENSION)))
-        file_2 = os.path.join(dir_name, patient_id, '.'.join((row["scan_2"], FILE_EXTENSION)))
+        file_1 = os.path.join(DIR_NAME, patient_id, '.'.join((row["scan_1"], FILE_EXTENSION)))
+        file_2 = os.path.join(DIR_NAME, patient_id, '.'.join((row["scan_2"], FILE_EXTENSION)))
 
         if not (os.path.isfile(file_1) and os.path.isfile(file_2)):
             continue
@@ -94,9 +113,8 @@ if __name__ == '__main__':
 
     # Split the data into training set and test set.
     # DONT look at what is in the test set
-    test_patient_ids = ['2','32','24','24b','6','7', '41']
-    test_data = data.loc[test_patient_ids]
-    train_data = data.loc[data.index.difference(test_patient_ids)]
+    test_data = data.loc[TEST_PATIENT_IDS]
+    train_data = data.loc[data.index.difference(TEST_PATIENT_IDS)]
 
     pickle.dump(train_data, open("train_data_%s_threshold.pkl" % label_type, "wb") )
     pickle.dump(test_data, open("test_data_%s_threshold.pkl" % label_type, "wb") )
