@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import operator
 
 from matplotlib import pyplot as plt
 import seaborn as sn
@@ -108,8 +109,11 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     if multi_class == False:
         my_dict = {'I':1, 'SR':-1}
         print("ROC AUC score")
-        print(roc_auc_score(np.vectorize(my_dict.get)(y_test), np.vectorize(my_dict.get)(y_pred)))
-        plot_roc_binary(y_test, model.predict_proba(X_test))
+        vectorized = np.vectorize(my_dict.get)(y_test)
+        # sort classes by label value so they match up with vectorized
+        classes = sorted(my_dict.items(), key=operator.itemgetter(0))
+        print(roc_auc_score(vectorized, model.predict_proba(X_test)[:, 0]))
+        plot_roc_binary(vectorized, model.predict_proba(X_test), classes)
     else:
         plot_roc_multi(y_test, model.predict_proba(X_test))
     print()
@@ -120,11 +124,8 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3):
     y_train_pred = model.predict(X_train)
     print(classification_report(y_train, y_train_pred))
 
-def plot_roc_binary(y_true, y_score):
-    classes = np.unique(y_true)
-    y = label_binarize(y_true, classes=np.unique(y_true))
-    
-    fpr, tpr, _ = roc_curve(y[:,0], y_score[:,0])
+def plot_roc_binary(y, y_score, classes):
+    fpr, tpr, _ = roc_curve(y, y_score[:,0])
     roc_auc = auc(fpr, tpr)
     
     plt.figure()
