@@ -44,14 +44,15 @@ def detect_and_draw(path, feature_type='orb', draw_img=True, path_prefix='..'):
     elif feature_type == 'surf':
         pass
 
-def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters,
+def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters=50,
                          feature_type='orb', path_prefix='..'):
+    """Use this to generate the 'one-hot' style feature vector once you already have the kmeans clusters."""
     data = []
     indices = []
     for before_path, after_path, label in zip(before_paths, after_paths, labels):
         feature_vec = np.zeros(2 * num_clusters)
-        before_kp, before_des, before_img = detect_and_draw(before_path, feature_type=feature_type, draw_img=False)
-        after_kp, after_des, after_img = detect_and_draw(after_path, feature_type=feature_type, draw_img=False)
+        before_kp, before_des, before_img = detect_and_draw(before_path, feature_type=feature_type, draw_img=False, path_prefix=path_prefix)
+        after_kp, after_des, after_img = detect_and_draw(after_path, feature_type=feature_type, draw_img=False, path_prefix=path_prefix)
         before_clusters = kmeans_clusters.predict(before_des)
         after_clusters = kmeans_clusters.predict(after_des)
         for c in before_clusters:
@@ -102,8 +103,7 @@ def get_all_features(before_paths, after_paths, feature_type='orb', path_prefix=
         all_features = all_features.append(pd.DataFrame(after_des))
     return all_features
 
-def get_features_clusters_and_vbow_data(before_paths, after_paths, labels, num_clusters=50, feature_type='orb',
-        augment=False):
+def get_features_clusters_and_vbow_data(before_paths, after_paths, labels, num_clusters=50, feature_type='orb',augment=False):
     raw_image_features = get_all_features(before_paths, after_paths, feature_type)
     kmeans_clusters = KMeans(n_clusters=num_clusters).fit(raw_image_features)
     X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters, feature_type=feature_type)
