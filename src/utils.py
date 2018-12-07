@@ -78,11 +78,8 @@ def plot_confusion_matrix(y_test,y_pred):
 def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False):
     # Change to 2-class
     if not multi_class:
-        # TODO replace this hacky bullshit
-        y = [yi if yi != 'S' else 'SR' for yi in y]
-        y = [yi if yi != 'R' else 'SR' for yi in y]
-        # y = y.replace('S', 'SR')
-        # y = y.replace('R', 'SR')
+        y = y.replace('S', 'SR')
+        y = y.replace('R', 'SR')
     # Split the dataset in two equal parts
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=0, stratify=y)
