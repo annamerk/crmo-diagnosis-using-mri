@@ -4,6 +4,7 @@ matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+import pickle
 from sklearn.cluster import KMeans
 from sklearn.model_selection import GridSearchCV, LeavePOut, KFold
 from sklearn.svm import SVC
@@ -79,23 +80,35 @@ def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num
     return X, y
 
 def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=False,
-                feature_type='sift', path_prefix='..', cv_method='lpo'):
+                feature_type='sift', path_prefix='..', cv_method='lpo', model='svm'):
+    # get the kmeans centroids
+
     kmeans_clusters = KMeans(n_clusters=num_clusters).fit(orb_features)
-    data = []
+
+    # using the centroids, extract the "bag-of-words" type dataset
     X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters, feature_type=feature_type)
+
+    # pick our cross validation method and train our model
     if cv_method == 'lpo':
+        augmented = 'not_augmented'
         cv = LeavePOut(3)
     else:
+        augmented = 'augmented'
         cv = KFold(n_splits=5)
     params = {
         'C': [0.1, 1, 10, 100],
         'gamma': [.0001, 0.001, 0.01, 0.1, 1],
     }
     svm_clf = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
-    do_CV(X, y, svm_clf, multi_class=multi_class)
+    best_params = do_CV(X, y, svm_clf, multi_class=multi_class)
+    # train model on best params
     if write_kmeans:
         class_str = 'multiclass' if multi_class else 'binary'
-        pickle.dump(kmeans_clusters, open("./vbow/orb-{}-{}.pkl".format(str(num_clusters), class_str), "wb"))
+        # write the kmeans cluster centroids
+        pickle.dump(kmeans_clusters, open("./clusters/{}-{}.pkl".format(feature_type, str(num_clusters)), "wb"))
+        pickle.dump(X, open("./bow_datasets/{}-{}".format(feature_type, str(num_clusters)), "wb"))
+        model_grid_search_string = model + 'GridSearch'
+        pickle.dump(svm_clf, open("./models/{}-{}-{}-{}-{}.pkl".format(model_grid_search_string, feature_type, str(num_clusters), class_str, augmented), "wb"))
     
 def get_all_orb_features(before_paths, after_paths):
     all_orb_features = pd.DataFrame()
@@ -123,4 +136,5 @@ def get_features_clusters_and_vbow_data(before_paths, after_paths, labels, num_c
     return (raw_image_features, kmeans_clusters, X, y)
 
 if __name__ == '__main__':
+
     pass
