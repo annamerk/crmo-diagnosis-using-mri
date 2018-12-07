@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.model_selection import GridSearchCV, LeavePOut
+from sklearn.model_selection import GridSearchCV, LeavePOut, KFold
 from sklearn.svm import SVC
 
 from .utils import do_CV
@@ -35,6 +35,16 @@ def detect_and_draw_sift(path, draw_img=False):
         plt.imshow(img), plt.show()
     return kp, des, kps_img
 
+def detect_and_draw_surf(path, draw_img=False):
+    surf = cv2.xfeatures2d.SURF_create(400)
+    img = cv2.imread(path, 0)
+    kp, des = surf.detectAndCompute(img,None)
+    kps_img = cv2.drawKeypoints(img, kp, None, color=(0,255,0), flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    if draw_img:
+        plt.imshow(img), plt.show()
+    return kp, des, kps_img
+
+
 def detect_and_draw(path, feature_type='orb', draw_img=True, path_prefix='..'):
     path = '/'.join((path_prefix, path))
     if feature_type == 'orb':
@@ -42,7 +52,7 @@ def detect_and_draw(path, feature_type='orb', draw_img=True, path_prefix='..'):
     elif feature_type == 'sift':
         return detect_and_draw_sift(path, draw_img)
     elif feature_type == 'surf':
-        pass
+        return detect_and_draw_surf(path, draw_img)
 
 def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters=50,
                          feature_type='orb', path_prefix='..'):
@@ -69,17 +79,20 @@ def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num
     return X, y
 
 def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=False,
-                feature_type='sift', path_prefix='..'):
+                feature_type='sift', path_prefix='..', cv_method='lpo'):
     kmeans_clusters = KMeans(n_clusters=num_clusters).fit(orb_features)
     data = []
     X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters, feature_type=feature_type)
-    lpo = LeavePOut(3)
+    if cv_method == 'lpo':
+        cv = LeavePOut(3)
+    else:
+        cv = KFold(n_splits=5)
     params = {
         'C': [0.1, 1, 10, 100],
         'gamma': [.0001, 0.001, 0.01, 0.1, 1],
     }
-    svm_clf = GridSearchCV(SVC(), cv=lpo, param_grid=params)
-    do_CV(X, y, svm_clf, multi_class=multi_class, binary_class_labels=['I', 'SR'])
+    svm_clf = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
+    do_CV(X, y, svm_clf, multi_class=multi_class)
     if write_kmeans:
         class_str = 'multiclass' if multi_class else 'binary'
         pickle.dump(kmeans_clusters, open("./vbow/orb-{}-{}.pkl".format(str(num_clusters), class_str), "wb"))
