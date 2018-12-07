@@ -47,6 +47,23 @@ def augment(before_paths, after_paths, labels):
             new_labels.append(flipped_label)
     return (new_before_paths, new_after_paths, new_labels)
 
+def train_paths_and_labels():
+    bp, ap, labels, patient_ids = [], [], [], []
+    for index, row in pd.read_csv('../data.csv').iterrows():
+        patient_id = str(row["patient_id"])
+        if patient_id in TEST_PATIENT_IDS:
+            continue
+
+        file_1 = os.path.join('..', DIR_NAME, patient_id, '.'.join((row["scan_1"], FILE_EXTENSION)))
+        file_2 = os.path.join('..', DIR_NAME, patient_id, '.'.join((row["scan_2"], FILE_EXTENSION)))
+
+        if not (os.path.isfile(file_1) and os.path.isfile(file_2)):
+            continue
+        labels.append(row["y"])
+        bp.append(file_1[3:])
+        ap.append(file_2[3:])
+    return (bp, ap, labels)
+
 def test_paths_and_labels():
     test_bp, test_ap, test_labels, patient_ids = [], [], [], []
     for index, row in pd.read_csv('../data.csv').iterrows():
