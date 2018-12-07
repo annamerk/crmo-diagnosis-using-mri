@@ -10,5 +10,6 @@ dependencies:
   - python=3.6
   - jupyter
   - seaborn
+  - mlxtend
   - pip:
     - pydicom
