@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pickle
 from sklearn.cluster import KMeans
-from sklearn.model_selection import GridSearchCV, LeavePOut, KFold
+from sklearn.model_selection import GridSearchCV, LeavePOut, KFold, StratifiedKFold
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.svm import SVC
 
 from .utils import do_CV
@@ -80,7 +81,8 @@ def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num
     return X, y
 
 def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=False,
-                feature_type='sift', path_prefix='..', cv_method='lpo', model='svm'):
+                feature_type='sift', path_prefix='..', cv_method='lpo', model='svm',
+                save_img=False):
     # get the kmeans centroids
 
     kmeans_clusters = KMeans(n_clusters=num_clusters).fit(orb_features)
@@ -94,21 +96,35 @@ def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, m
         cv = LeavePOut(3)
     else:
         augmented = 'augmented'
-        cv = KFold(n_splits=5)
-    params = {
-        'C': [0.1, 1, 10, 100],
-        'gamma': [.0001, 0.001, 0.01, 0.1, 1],
-    }
-    svm_clf = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
-    best_params = do_CV(X, y, svm_clf, multi_class=multi_class)
+        cv = StratifiedKFold(n_splits=5)
+
+    if model == 'svm':
+        params = {
+            'C': [1, 10],
+            'gamma': [.0001, 0.001, 0.01],
+        }
+        classifier = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
+    elif model == 'nb':
+        params = {
+            'fit_prior': [True, False],
+        }
+        # I think this makes all vectors binary
+        classifier = GridSearchCV(BernoulliNB(binarize=0.01), cv=cv, param_grid=params)
+
+    # HACK: I <3 dynamic typing
+    if type(y) != pd.DataFrame:
+        y = pd.DataFrame(np.ravel(y))
+
+    model_grid_search_string = model + 'GridSearch'
+    class_str = 'multiclass' if multi_class else 'binary'
+    model_name = "{}-{}-{}-{}-{}".format(model_grid_search_string, feature_type, str(num_clusters), class_str, augmented)
+    best_params = do_CV(X, y, classifier, multi_class=multi_class, save_img=save_img, img_name=model_name)
     # train model on best params
     if write_kmeans:
-        class_str = 'multiclass' if multi_class else 'binary'
         # write the kmeans cluster centroids
         pickle.dump(kmeans_clusters, open("./clusters/{}-{}.pkl".format(feature_type, str(num_clusters)), "wb"))
         pickle.dump(X, open("./bow_datasets/{}-{}".format(feature_type, str(num_clusters)), "wb"))
-        model_grid_search_string = model + 'GridSearch'
-        pickle.dump(svm_clf, open("./models/{}-{}-{}-{}-{}.pkl".format(model_grid_search_string, feature_type, str(num_clusters), class_str, augmented), "wb"))
+        pickle.dump(classifier, open("./models/%s.pkl" % model_name, "wb"))
     
 def get_all_orb_features(before_paths, after_paths):
     all_orb_features = pd.DataFrame()

@@ -37,7 +37,7 @@ def show_incorrect_images(model, x_test, y_test):
         plt.show()
 
 def generate_validation_curve(estimator, X, y, param_name, param_range, cv,
-    scoring, n_jobs, title, xlabel):
+    scoring, n_jobs, title, xlabel, save_img=False, img_name=None):
 
     train_scores, test_scores = model_selection.validation_curve(
         estimator, X, y, param_name=param_name, param_range=param_range,
@@ -64,18 +64,26 @@ def generate_validation_curve(estimator, X, y, param_name, param_range, cv,
                    test_scores_mean + test_scores_std, alpha=0.2,
                    color="navy", lw=lw)
     plt.legend(loc="best")
-    plt.show()
+    if save_img:
+        plt.savefig('./cv_images/' + img_name + '_validation_curve.png', dpi=200)
+    else:
+        plt.show()
 
-def plot_confusion_matrix(y_test,y_pred):
+def plot_confusion_matrix(y_test,y_pred, save_img=False, img_name=None):
     class_names = np.unique(y_test)
     df_cm = pd.DataFrame(
         confusion_matrix(y_test,y_pred), index=class_names, columns=class_names, 
     )
     #sn.set(font_scale=1.4)#for label size
+    plt.clf()
     sn.heatmap(df_cm, annot=True,annot_kws={"size": 16})
-    plt.show()
+    if save_img:
+        plt.savefig('./cv_images/' + img_name + '_confusion_matrix.png', dpi=200)
+    else:
+        plt.show()
 
-def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False):
+def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False,
+          save_img=False, img_name=None):
     # Change to 2-class
     if not multi_class:
         y = y.replace('S', 'SR')
@@ -109,7 +117,7 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False):
     print("The scores are computed on the full evaluation set.")
     print()
     y_pred = model.predict(X_test)
-    plot_confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(y_test, y_pred, save_img=save_img, img_name=img_name)
     if multi_class == False:
         my_dict = {'I':1, 'SR':-1}
         print("ROC AUC score")
@@ -117,9 +125,12 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False):
         # sort classes by label value so they match up with vectorized
         classes = sorted(my_dict.items(), key=operator.itemgetter(0))
         print(roc_auc_score(vectorized, model.predict_proba(X_test)[:, 0]))
-        plot_roc_binary(vectorized, model.predict_proba(X_test), classes)
+        plot_roc_binary(vectorized, model.predict_proba(X_test), classes,
+                        save_img=save_img, img_name=img_name)
     else:
-        plot_roc_multi(y_test, model.predict_proba(X_test), model.best_estimator_.classes_)
+        plot_roc_multi(y_test, model.predict_proba(X_test),
+                       model.best_estimator_.classes_, save_img=save_img,
+                       img_name=img_name)
     print()
     print("This is the classification report for the eval set:")
     print(classification_report(y_test, y_pred))
@@ -139,7 +150,7 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False):
         print(y_test[incorrect_indices])
     return model.best_estimator_
 
-def plot_roc_binary(y, y_score,classes):
+def plot_roc_binary(y, y_score,classes, save_img=False, img_name=None):
     fpr, tpr, _ = roc_curve(y, y_score[:,0])
 
     roc_auc = auc(fpr, tpr)
@@ -154,9 +165,12 @@ def plot_roc_binary(y, y_score,classes):
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(loc="lower right")
-    plt.show()
+    if save_img:
+        plt.savefig('./cv_images/' + img_name + '_roc_binary.png', dpi=200)
+    else:
+        plt.show()
 
-def plot_roc_multi(y_true, y_score, classes):
+def plot_roc_multi(y_true, y_score, classes, save_img=False, img_name=None):
     y = label_binarize(y_true, classes=classes)
     n_classes = len(classes)
 
@@ -212,4 +226,7 @@ def plot_roc_multi(y_true, y_score, classes):
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(loc="lower right")
-    plt.show()
+    if save_img:
+        plt.savefig('./cv_images/' + img_name + '_roc_multi.png', dpi=200)
+    else:
+        plt.show()
