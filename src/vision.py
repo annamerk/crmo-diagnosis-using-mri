@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pickle
 from sklearn.cluster import KMeans
-from sklearn.model_selection import GridSearchCV, LeavePOut, KFold
+from sklearn.model_selection import GridSearchCV, LeavePOut, KFold, StratifiedKFold
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.svm import SVC
 
 from .utils import do_CV
@@ -94,13 +95,23 @@ def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, m
         cv = LeavePOut(3)
     else:
         augmented = 'augmented'
-        cv = KFold(n_splits=5)
-    params = {
-        'C': [0.1, 1, 10, 100],
-        'gamma': [.0001, 0.001, 0.01, 0.1, 1],
-    }
-    svm_clf = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
-    best_params = do_CV(X, y, svm_clf, multi_class=multi_class)
+        cv = StratifiedKFold(n_splits=5)
+
+    if model == 'svm':
+        params = {
+            'C': [0.1, 1, 10, 100],
+            'gamma': [.0001, 0.001, 0.01, 0.1, 1],
+        }
+        classifier = GridSearchCV(SVC(probability=True), cv=cv, param_grid=params)
+    elif model == 'nb':
+        # I think this makes all vectors binary
+        classifier = BernoulliNB(binarize=0.01)
+
+    # HACK: I <3 dynamic typing
+    if type(y) != pd.DataFrame:
+        y = pd.DataFrame(np.ravel(y))
+
+    best_params = do_CV(X, y, classifier, multi_class=multi_class)
     # train model on best params
     if write_kmeans:
         class_str = 'multiclass' if multi_class else 'binary'
