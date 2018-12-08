@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import pickle
+import random
 from sklearn.cluster import KMeans
 from sklearn.model_selection import GridSearchCV, LeavePOut, KFold, StratifiedKFold
 from sklearn.naive_bayes import BernoulliNB
@@ -150,6 +151,18 @@ def get_features_clusters_and_vbow_data(before_paths, after_paths, labels, num_c
     kmeans_clusters = KMeans(n_clusters=num_clusters).fit(raw_image_features)
     X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters, feature_type=feature_type)
     return (raw_image_features, kmeans_clusters, X, y)
+
+def add_noise(img):
+    noise = np.zeros_like(img)
+    # stretch
+    x = img.shape[0]
+    y = img.shape[1]
+    x = round(x * random.uniform(0.9, 1.1))
+    y = round(y * random.uniform(0.9, 1.1))
+    # add gaussian "salt n pepper" noise
+    cv2.randn(noise, 0,  np.identity(1) * 40)
+    return cv2.resize(img + noise, (x, y))
+
 
 if __name__ == '__main__':
 
