@@ -36,10 +36,12 @@ def run():
                         bp,
                         ap,
                         labels,
+                        model=model,
                         feature_type=feature_type,
                         cv_method='kfold',
                         write_kmeans=True,
-                        multi_class=multi_class)
+                        multi_class=multi_class,
+                        save_img=True)
 
 
 if __name__=='__main__':
