@@ -14,6 +14,15 @@ from sklearn.model_selection import train_test_split,KFold,learning_curve, Leave
 FILE_EXTENSION = "tif"
 DIR_NAME = "legs_folder/"
 TEST_PATIENT_IDS = ['2','32','24','24b','6','7', '41']
+TEST_KEYS = [
+    '6/10-23-14.tif/11-16-17.tif',
+    '7/4-10-12.tif/5-28-15.tif',
+    '2/12-11-12.tif/12-17-13.tif',
+    '24/3-11-14.tif/8-14-14.tif',
+    '24b/3-11-14.tif/8-14-14.tif',
+    '32/12-17-15.tif/1-5-17.tif',
+    '41/1-25-11.tif/8-7-12.tif',
+]
 
 def binary_threshold(img):
     ret, threshold = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
