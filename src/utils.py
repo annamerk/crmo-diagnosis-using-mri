@@ -7,7 +7,7 @@ import seaborn as sn
 import pandas as pd
 from sklearn import model_selection
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, roc_curve, auc, classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, roc_curve, auc, classification_report, confusion_matrix, f1_score
 from itertools import cycle
 from sklearn.preprocessing import label_binarize
 from scipy import interp
@@ -90,7 +90,7 @@ def plot_confusion_matrix(y_test,y_pred, save_img=False, img_name=None):
         plt.show()
 
 def _do_CV(X_train, X_test, y_train, y_test, model, multi_class=True, test_size=0.3, show_incorrect=False,
-          save_img=False, img_name=None):
+          save_img=True, img_name=None):
     print("# Tuning hyper-parameter")
     print()
 
@@ -147,7 +147,9 @@ def _do_CV(X_train, X_test, y_train, y_test, model, multi_class=True, test_size=
         print(model.predict(X_test)[incorrect_indices])
         print("Actual class")
         print(y_test[incorrect_indices])
-    return model.best_estimator_
+    # return model.best_estimator_
+    # ZACH HACK
+    return model.best_estimator_, f1_score(y_test, y_pred, average='macro')
 
 def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False,
           save_img=False, img_name=None):
@@ -159,8 +161,8 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False,
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=0, stratify=y)
 
-    return _do_CV(X_train, X_test, y_train, y_test, model, multi_class=True, test_size=0.3, show_incorrect=False,
-                  save_img=False, img_name=None)
+    return _do_CV(X_train, X_test, y_train, y_test, model, multi_class=multi_class, test_size=0.3, show_incorrect=False,
+                  save_img=True, img_name=img_name)
 
 
 def plot_roc_binary(y, y_score,classes, save_img=False, img_name=None):

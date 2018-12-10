@@ -7,6 +7,7 @@ import pandas as pd
 import pickle
 import random
 from sklearn.cluster import KMeans
+from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV, LeavePOut, KFold, StratifiedKFold, train_test_split
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.svm import SVC
@@ -214,7 +215,7 @@ def vbow_kmeans_with_noise(before_paths, after_paths, labels, path_prefix='..', 
         pickle.dump(classifier, open("./models/noisy-%s.pkl" % model_name, "wb"))
 
 
-def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=False,
+def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=True,
                 feature_type='sift', path_prefix='..', cv_method='lpo', model='svm',
                 save_img=False):
     # get the kmeans centroids
@@ -256,13 +257,17 @@ def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, m
     model_grid_search_string = model + 'GridSearch'
     class_str = 'multiclass' if multi_class else 'binary'
     model_name = "{}-{}-{}-{}-{}".format(model_grid_search_string, feature_type, str(num_clusters), class_str, augmented)
-    best_params = do_CV(X, y, classifier, multi_class=multi_class, save_img=save_img, img_name=model_name)
+    best_estimator, f1_score = do_CV(X, y, classifier, multi_class=multi_class, save_img=save_img, img_name=model_name)
     # train model on best params
     if write_kmeans:
         # write the kmeans cluster centroids
         pickle.dump(kmeans_clusters, open("./clusters/{}-{}.pkl".format(feature_type, str(num_clusters)), "wb"))
         pickle.dump(X_full, open("./bow_datasets/{}-{}".format(feature_type, str(num_clusters)), "wb"))
         pickle.dump(classifier, open("./models/%s.pkl" % model_name, "wb"))
+    print("============= printing test set results ==============")
+    print(best_estimator)
+    print(classification_report(y_full.loc[TEST_KEYS], best_estimator.predict(X_full.loc[TEST_KEYS])))
+    return best_estimator, f1_score
     
 def get_all_features(before_paths, after_paths, feature_type='orb', path_prefix='..', augment_with_noise_factor=0):
     """This is a generic version of get_all_orb_features"""
