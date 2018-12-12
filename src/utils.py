@@ -128,8 +128,9 @@ def do_CV(X,y, model, multi_class=True, test_size=0.3, show_incorrect=False,
         plot_roc_binary(vectorized, model.predict_proba(X_test), classes,
                         save_img=save_img, img_name=img_name)
     else:
+        classes = sorted(np.unique(y_test))
         plot_roc_multi(y_test, model.predict_proba(X_test),
-                       model.best_estimator_.classes_, save_img=save_img,
+                       classes, save_img=save_img,
                        img_name=img_name)
     print()
     print("This is the classification report for the eval set:")
