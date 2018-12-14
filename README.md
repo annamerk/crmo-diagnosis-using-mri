@@ -24,3 +24,14 @@ Key files:
 - *Inception CNN retraining.ipynb*: various models trained on data generated with tensorflow.
 ## Ensemble
 - *Ensemble Voter.ipynb*: contains various models produced by voting ensembling inception and vbow models.
+## Visual bag of words
+Work is contained in the vbow directory, which contains serialized models and
+intermediate data. Research work is spread through three notebooks:
+zach-cv.ipynb, zach-bagging.ipynb, and zach-models.ipynb. src/vision.py
+contains most of the core functionality, while the notebooks stitch things
+together.
+## Miscellaneous
+- *src/generate_features.py*: contains utilities for feature generation, working
+  with labels, and data augmentation.
+- *src/utils.py* contains utilies for graphing, metrics evaluation, and
+  analysis.
