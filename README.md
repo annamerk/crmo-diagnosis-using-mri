@@ -11,9 +11,11 @@
   - This activates the `cs229-project` environment
   - Do this each time you want to write/test your code
 
+## Data
+- *data.csv*: list of image pairings and class curated from radiologist information
+- *legs_folder*: excluded from github for privacy, but expected to contain MRIs.
 ## Baseline
 Initial experimentation with histograms is contained in Baseline.ipynb
-- *data.csv*: list of image pairings and class curated from radiologist information
 ## Inception (folder /inception)
 Jupyter notebooks as well as pickled output data and generated models are found in the inception folder.
 Key files:
