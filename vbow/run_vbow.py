@@ -69,15 +69,15 @@ def run_high_performers():
     test_bp, test_ap, test_labels = generate_features.test_paths_and_labels()
     bp, ap, labels = generate_features.augment(train_bp, train_ap, train_labels)
     high_performers = [
-        # Model(model='nb', multi_class=True, feature_type='orb', num_clusters=200),
-        # Model(model='nb', multi_class=True, feature_type='orb', num_clusters=500),
-        # Model(model='nb', multi_class=True, feature_type='sift', num_clusters=100),
-        # Model(model='nb', multi_class=True, feature_type='sift', num_clusters=100),
-        # Model(model='nb', multi_class=True, feature_type='sift', num_clusters=200),
+        Model(model='nb', multi_class=True, feature_type='orb', num_clusters=200),
+        Model(model='nb', multi_class=True, feature_type='orb', num_clusters=500),
+        Model(model='nb', multi_class=True, feature_type='sift', num_clusters=100),
+        Model(model='nb', multi_class=True, feature_type='sift', num_clusters=100),
+        Model(model='nb', multi_class=True, feature_type='sift', num_clusters=200),
         Model(model='nb', multi_class=True, feature_type='sift', num_clusters=200),
         Model(model='nb', multi_class=False, feature_type='sift', num_clusters=100),
-        # Model(model='nb', multi_class=True, feature_type='surf', num_clusters=100),
-        # Model(model='svm', multi_class=False, feature_type='orb', num_clusters=50),
+        Model(model='nb', multi_class=True, feature_type='surf', num_clusters=100),
+        Model(model='svm', multi_class=False, feature_type='orb', num_clusters=50),
 
     ]
     new_high_performers = [
